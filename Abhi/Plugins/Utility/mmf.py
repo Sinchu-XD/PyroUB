@@ -29,6 +29,10 @@ async def generate_meme(client, message: Message, output_type="image"):
     top_text = meme_text[0].strip() if len(meme_text) > 0 else ""
     bottom_text = meme_text[1].strip() if len(meme_text) > 1 else ""
 
+    # Ensure text is not empty
+    if not top_text and not bottom_text:
+        return await message.reply("⚠️ **Text cannot be empty!**")
+
     # Download media
     media_path = await client.download_media(message.reply_to_message)
     output_image_path = os.path.join(TEMP_PATH, f"meme_{random.randint(1000, 9999)}.png")
@@ -62,13 +66,17 @@ async def generate_meme(client, message: Message, output_type="image"):
 
         # Function to draw outlined text
         def draw_text(draw, text, position):
-            if not text:
+            if not text or not isinstance(text, str):  # Fix for 'NoneType' error
                 return
             x, y = position
 
             # Calculate text size
-            bbox = draw.textbbox((0, 0), text, font=font)
+            bbox = draw.textbbox((0, 0), text, font=font) if hasattr(draw, "textbbox") else (0, 0, 0, 0)
             text_width, text_height = bbox[2] - bbox[0], bbox[3] - bbox[1]
+
+            # Ensure text is valid
+            if text_width == 0 or text_height == 0:
+                return
 
             # Center text
             x = (img.width - text_width) // 2
@@ -86,6 +94,7 @@ async def generate_meme(client, message: Message, output_type="image"):
 
         # Save meme in appropriate format
         if output_type == "sticker":
+            img = img.convert("RGB")  # Ensure webp format works correctly
             img.save(output_sticker_path, "WEBP")
             await message.reply_sticker(output_sticker_path)
         else:
