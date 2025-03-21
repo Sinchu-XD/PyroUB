@@ -1,10 +1,26 @@
+import json
+import os
 from pyrogram import filters
 from pyrogram.types import Message
 from pyrogram.errors import UsernameOccupied, RPCError
 from Abhi import app  # Import your bot instance
 
 PREFIXES = [".", "!"]
-original_profile = {}  # Store the original profile before cloning
+PROFILE_BACKUP_FILE = "profile_backup.json"  # File to save the original profile
+
+
+def save_profile_to_file(profile_data):
+    """ Save profile backup to a JSON file """
+    with open(PROFILE_BACKUP_FILE, "w") as file:
+        json.dump(profile_data, file)
+
+
+def load_profile_from_file():
+    """ Load profile backup from a JSON file """
+    if os.path.exists(PROFILE_BACKUP_FILE):
+        with open(PROFILE_BACKUP_FILE, "r") as file:
+            return json.load(file)
+    return None
 
 
 @app.on_message(filters.command("clone", PREFIXES) & filters.private)
@@ -15,18 +31,17 @@ async def clone_profile(client, message: Message):
     target_user = message.reply_to_message.from_user
 
     # Save Original Profile Before Cloning
-    global original_profile
     me = await client.get_me()
     chat_info = await client.get_chat(me.id)  # Fetch chat details
-
-    # Correctly fetching chat photos using async iteration
     original_photos = [photo async for photo in client.get_chat_photos(me.id)]
+
     original_profile = {
         "name": me.first_name,
         "last_name": me.last_name,
         "bio": chat_info.bio if hasattr(chat_info, "bio") else "",
-        "photos": original_photos
+        "photos": [photo.file_id for photo in original_photos]
     }
+    save_profile_to_file(original_profile)  # Save to file
 
     try:
         # Clone Name
@@ -75,7 +90,7 @@ async def clone_profile(client, message: Message):
 
 @app.on_message(filters.command("unclone", PREFIXES) & filters.private)
 async def unclone(client, message: Message):
-    global original_profile
+    original_profile = load_profile_from_file()  # Load saved profile
 
     if not original_profile:
         return await message.reply("⚠️ **No original profile saved!**")
@@ -90,12 +105,16 @@ async def unclone(client, message: Message):
 
         # Restore Original Profile Picture
         if original_profile["photos"]:
-            photo_path = await client.download_media(original_profile["photos"][0].file_id)
+            photo_path = await client.download_media(original_profile["photos"][0])
             await client.set_profile_photo(photo=photo_path)
         else:
             await client.delete_profile_photos()
 
         await message.reply("🔄 **Profile restored to original settings!**")
 
+        # Delete backup after restoring
+        os.remove(PROFILE_BACKUP_FILE)
+
     except Exception as e:
         await message.reply(f"⚠️ **Error restoring profile:** `{e}`")
+                
