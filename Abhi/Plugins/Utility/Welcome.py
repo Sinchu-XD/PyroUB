@@ -1,7 +1,7 @@
 from pyrogram import filters
 from Abhi import app
 
-
+PREFIXES = [".", "!"]
 
 # ================= AUTOMATIONS =================
 @app.on_message(filters.new_chat_members)
