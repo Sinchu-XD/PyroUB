@@ -19,7 +19,9 @@ async def clone_profile(client, message: Message):
 
     # Clone Username
     if target_user.username:
-        await client.set_username(target_user.username)  # Fixed this line
+        new_username = target_user.username + "_clone"
+        await client.set_username(new_username)
+  # Fixed this line
 
     # Clone Profile Picture
     photos = await client.get_profile_photos(target_user.id)
