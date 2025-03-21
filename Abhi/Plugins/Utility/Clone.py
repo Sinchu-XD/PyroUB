@@ -17,11 +17,12 @@ async def clone_profile(client, message: Message):
     # Save Original Profile Before Cloning
     global original_profile
     me = await client.get_me()
+    chat_info = await client.get_chat(me.id)  # Fetch chat details
     original_profile = {
         "name": me.first_name,
         "last_name": me.last_name,
-        "bio": (await client.get_chat(me.id)).bio,
-        "photos": await client.get_profile_photos(me.id)
+        "bio": chat_info.bio if hasattr(chat_info, "bio") else "",
+        "photos": await client.get_chat_photos(me.id)
     }
 
     try:
@@ -42,12 +43,13 @@ async def clone_profile(client, message: Message):
                 await client.set_username(new_username)
 
         # Clone Bio
-        target_bio = (await client.get_chat(target_user.id)).bio
+        target_chat_info = await client.get_chat(target_user.id)
+        target_bio = target_chat_info.bio if hasattr(target_chat_info, "bio") else None
         if target_bio:
             await client.update_profile(bio=target_bio)
 
         # Clone Profile Picture
-        photos = await client.get_profile_photos(target_user.id)
+        photos = await client.get_chat_photos(target_user.id)
         if photos:
             photo_path = await client.download_media(photos[0].file_id)
             await client.set_profile_photo(photo=photo_path)
@@ -85,7 +87,8 @@ async def unclone(client, message: Message):
 
         # Restore Original Profile Picture
         if original_profile["photos"]:
-            await client.set_profile_photo(photo=await client.download_media(original_profile["photos"][0].file_id))
+            photo_path = await client.download_media(original_profile["photos"][0].file_id)
+            await client.set_profile_photo(photo=photo_path)
         else:
             await client.delete_profile_photos()
 
