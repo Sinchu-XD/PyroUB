@@ -1,6 +1,5 @@
 import os
 import random
-import shutil
 import cv2
 from PIL import Image, ImageDraw, ImageFont
 from pyrogram import filters
@@ -8,51 +7,50 @@ from pyrogram.types import Message
 from Abhi import app  # Import your bot instance
 
 # Paths
-FONT_PATH = "Abhi/Plugins/Assets/Impact.ttf"
+FONT_PATH = "Abhi/Plugins/Assets/Impact.ttf"  # Ensure this file exists
 TEMP_PATH = "Abhi/Plugins/Temp/"
 
 # Ensure the temp directory exists
 os.makedirs(TEMP_PATH, exist_ok=True)
 
 async def generate_meme(client, message: Message, output_type="image"):
-    if not message.reply_to_message.media:
-        return await message.reply("❌ **Reply to an image, GIF, or sticker with text!**")
+    if not message.reply_to_message:
+        return await message.reply("❌ **Reply to an image, sticker, or GIF with text!**")
 
-    if not (message.reply_to_message.photo or message.reply_to_message.sticker or message.reply_to_message.animation):
-        return await message.reply("❌ **Only Images, Stickers, and GIFs are supported!**")
+    # Check media type
+    media = message.reply_to_message
+    if not (media.photo or media.sticker or media.animation):
+        return await message.reply("❌ **Only images, stickers, and GIFs are supported!**")
 
     # Extract meme text
     if len(message.command) < 2:
         return await message.reply("⚠️ **Provide text for the meme!**\nExample: `.mmfimg Top Text | Bottom Text`")
 
     meme_text = " ".join(message.command[1:]).split("|")
-    top_text = meme_text[0].strip() if len(meme_text) > 0 else ""
+    top_text = meme_text[0].strip() if meme_text[0] else ""
     bottom_text = meme_text[1].strip() if len(meme_text) > 1 else ""
 
-    # Ensure text is not empty
+    # Prevent 'NoneType' issues
     if not top_text and not bottom_text:
         return await message.reply("⚠️ **Text cannot be empty!**")
 
     # Download media
-    media_path = await client.download_media(message.reply_to_message)
+    media_path = await client.download_media(media)
     output_image_path = os.path.join(TEMP_PATH, f"meme_{random.randint(1000, 9999)}.png")
     output_sticker_path = os.path.join(TEMP_PATH, f"meme_{random.randint(1000, 9999)}.webp")
 
     try:
-        # Convert GIF/Video Sticker to Image
-        if message.reply_to_message.animation or (message.reply_to_message.sticker and message.reply_to_message.sticker.is_video):
-            temp_video_path = os.path.join(TEMP_PATH, f"frame_{random.randint(1000, 9999)}.jpg")
-            
-            # Extract first frame using OpenCV
+        # Convert GIF/Video Sticker to Image (First Frame)
+        if media.animation or (media.sticker and media.sticker.is_video):
+            temp_frame = os.path.join(TEMP_PATH, f"frame_{random.randint(1000, 9999)}.jpg")
             cap = cv2.VideoCapture(media_path)
             ret, frame = cap.read()
             cap.release()
-
             if ret:
-                cv2.imwrite(temp_video_path, frame)
-                media_path = temp_video_path  # Use extracted frame as meme base
+                cv2.imwrite(temp_frame, frame)
+                media_path = temp_frame
             else:
-                return await message.reply("❌ **Failed to extract frame from GIF/Video Sticker!**")
+                return await message.reply("❌ **Failed to extract a frame from GIF/Video Sticker!**")
 
         # Open the image
         img = Image.open(media_path).convert("RGBA")
@@ -81,11 +79,11 @@ async def generate_meme(client, message: Message, output_type="image"):
             # Center text
             x = (img.width - text_width) // 2
 
-            # Text outline
+            # Draw text outline
             for dx, dy in [(-2, -2), (2, -2), (-2, 2), (2, 2)]:
                 draw.text((x + dx, y + dy), text, font=font, fill="black")
 
-            # Main white text
+            # Draw main white text
             draw.text((x, y), text, font=font, fill="white")
 
         # Add texts
@@ -122,4 +120,4 @@ async def mmfimg(client, message: Message):
 @app.on_message(filters.command("mmfsticker", [".", "!"]) & filters.reply)
 async def mmfsticker(client, message: Message):
     await generate_meme(client, message, output_type="sticker")
-    
+            
