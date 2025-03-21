@@ -2,6 +2,11 @@ import asyncio
 from Abhi import app
 import logging
 
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("Abhi")
+
+
 async def start_bot():
     try:
         await app.start()
