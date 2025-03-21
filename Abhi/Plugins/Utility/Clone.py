@@ -18,11 +18,14 @@ async def clone_profile(client, message: Message):
     global original_profile
     me = await client.get_me()
     chat_info = await client.get_chat(me.id)  # Fetch chat details
+
+    # Correctly fetching chat photos using async iteration
+    original_photos = [photo async for photo in client.get_chat_photos(me.id)]
     original_profile = {
         "name": me.first_name,
         "last_name": me.last_name,
         "bio": chat_info.bio if hasattr(chat_info, "bio") else "",
-        "photos": await client.get_chat_photos(me.id)
+        "photos": original_photos
     }
 
     try:
@@ -49,9 +52,9 @@ async def clone_profile(client, message: Message):
             await client.update_profile(bio=target_bio)
 
         # Clone Profile Picture
-        photos = await client.get_chat_photos(target_user.id)
-        if photos:
-            photo_path = await client.download_media(photos[0].file_id)
+        target_photos = [photo async for photo in client.get_chat_photos(target_user.id)]
+        if target_photos:
+            photo_path = await client.download_media(target_photos[0].file_id)
             await client.set_profile_photo(photo=photo_path)
 
         await message.reply(
@@ -96,4 +99,3 @@ async def unclone(client, message: Message):
 
     except Exception as e:
         await message.reply(f"⚠️ **Error restoring profile:** `{e}`")
-        
