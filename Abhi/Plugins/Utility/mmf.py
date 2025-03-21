@@ -1,53 +1,81 @@
 import os
-from pyrogram import Client, filters
-import textwrap
+import random
 from PIL import Image, ImageDraw, ImageFont
-from Abhi import app
+from pyrogram import filters
+from pyrogram.types import Message
+from Abhi import app  # Import your bot instance
 
-PREFIXES = [".", "!"]
+# Font path (ensure this file exists in your bot directory)
+FONT_PATH = "Abhi/Plugins/Assets/impact.ttf"
+TEMP_PATH = "Abhi/Plugins/Temp/"
 
-@app.on_message(filters.command("mmf", PREFIXES) & filters.reply)
-async def memeify(client, message):
-    reply = message.reply_to_message
-    if not reply.photo:
-        return await message.reply("⚠️ **Reply to an image with .mmf <text>**")
+# Ensure the temporary folder exists
+os.makedirs(TEMP_PATH, exist_ok=True)
 
-    file = await client.download_media(reply)
-    
-    if not file:
-        return await message.reply("❌ **Failed to download the image!**")
+@app.on_message(filters.command("mmf", [".", "!"]) & filters.reply)
+async def mmf(client, message: Message):
+    if not message.reply_to_message.media:
+        return await message.reply("⚠️ **Reply to an image or sticker with your text!**")
 
-    if len(message.text.split()) > 1:
-        text = message.text.split(" ", 1)[1]
-    else:
-        return await message.reply("⚠️ **You must provide text for the meme!**")
+    if not message.reply_to_message.photo and not message.reply_to_message.sticker:
+        return await message.reply("❌ **Only Images and Stickers are supported!**")
 
-    meme_path = drawText(file, text)
-    await message.reply_photo(meme_path)
-    
-    os.remove(meme_path)
+    # Extract text
+    if len(message.command) < 2:
+        return await message.reply("⚠️ **Provide text for the meme!**\nExample: `.mmf Top Text | Bottom Text`")
 
-def drawText(image_path, text):
-    img = Image.open(image_path)
-    os.remove(image_path)  # Remove the original downloaded image
-    i_width, i_height = img.size
+    meme_text = " ".join(message.command[1:]).split("|")
+    top_text = meme_text[0].strip() if len(meme_text) > 0 else ""
+    bottom_text = meme_text[1].strip() if len(meme_text) > 1 else ""
 
-    # Use a default font that exists
-    font_path = "arial.ttf" if os.name == "nt" else "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-    font_size = int((70 / 640) * i_width)
-    font = ImageFont.truetype(font_path, font_size)
+    # Download media
+    media_path = await client.download_media(message.reply_to_message)
+    meme_path = os.path.join(TEMP_PATH, f"meme_{random.randint(1000, 9999)}.png")
 
-    draw = ImageDraw.Draw(img)
+    try:
+        # Open the image
+        img = Image.open(media_path).convert("RGBA")
 
-    # Center text manually
-    text_width, text_height = draw.textsize(text, font=font)
-    text_x = (i_width - text_width) // 2
-    text_y = int(0.1 * i_height)  # Adjust position at the top
+        # Resize image for better text fitting
+        img = img.resize((500, int(500 * img.height / img.width)))
 
-    # Outline effect for better visibility
-    shadow_color = "black"
-    draw.text((text_x - 2, text_y - 2), text, font=font, fill=shadow_color)
-    draw.text((text_x + 2, text_y - 2), text, font=font, fill=shadow_color)
-    draw.text((text_x - 2, text_y + 2), text, font=font, fill=shadow_color)
-    draw.text((text_x + 2, text_y + 2), text, font=font, fill="black")  # ✅ Fixed
+        # Load font
+        try:
+            font = ImageFont.truetype(FONT_PATH, 40)
+        except:
+            return await message.reply("❌ **Font file missing!** Upload `impact.ttf` to `Assets/` folder.")
 
+        draw = ImageDraw.Draw(img)
+
+        # Define text positions
+        w, h = img.size
+        padding = 10
+
+        def draw_text(text, position):
+            text_w, text_h = draw.textsize(text, font=font)
+            x = (w - text_w) // 2
+            y = position
+            draw.text((x + 2, y + 2), text, font=font, fill="black")  # Shadow
+            draw.text((x, y), text, font=font, fill="white")  # Main text
+
+        # Add top and bottom text
+        if top_text:
+            draw_text(top_text, padding)
+        if bottom_text:
+            draw_text(bottom_text, h - 50 - padding)
+
+        # Save the meme
+        img.save(meme_path)
+
+        await message.reply_photo(meme_path, caption="😂 **Here's your meme!**")
+
+    except Exception as e:
+        await message.reply(f"❌ **Error:** `{e}`")
+
+    finally:
+        # Clean up temporary files
+        if os.path.exists(media_path):
+            os.remove(media_path)
+        if os.path.exists(meme_path):
+            os.remove(meme_path)
+        
