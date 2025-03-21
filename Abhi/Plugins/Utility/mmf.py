@@ -6,7 +6,7 @@ from pyrogram.types import Message
 from Abhi import app  # Import your bot instance
 
 # Font path (ensure this file exists in your bot directory)
-FONT_PATH = "Abhi/Plugins/Assets/impact.ttf"
+FONT_PATH = "Abhi/Plugins/Assets/Impact.ttf"
 TEMP_PATH = "Abhi/Plugins/Temp/"
 
 # Ensure the temporary folder exists
