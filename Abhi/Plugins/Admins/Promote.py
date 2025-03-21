@@ -3,8 +3,11 @@ from pyrogram.types import ChatPrivileges
 from Abhi import app
 
 
+PREFIXES = [".", "!"]
+
+
 # Promote User (Basic Admin)
-@app.on_message(filters.command("promote") & filters.group)
+@app.on_message(filters.command("promote", PREFIX) & filters.group)
 async def promote(client, message):
     if not message.reply_to_message:
         return await message.reply("Reply to a user to promote them.")
@@ -13,13 +16,15 @@ async def promote(client, message):
 
     # Basic admin privileges
     await client.promote_chat_member(message.chat.id, user_id, ChatPrivileges(
-        can_manage_chat=True, can_change_info=True, can_delete_messages=True
+        can_manage_chat=True, can_change_info=False, can_delete_messages=True,
+        can_invite_users=True, can_restrict_members=False, can_pin_messages=True,
+        can_promote_members=False
     ))
 
     await message.reply(f"✅ Successfully promoted {message.reply_to_message.from_user.mention}.")
 
 # Full Promote (All Admin Privileges)
-@app.on_message(filters.command("fullpromote") & filters.group)
+@app.on_message(filters.command("fullpromote", PREFIX) & filters.group)
 async def full_promote(client, message):
     if not message.reply_to_message:
         return await message.reply("Reply to a user to fully promote them.")
@@ -36,7 +41,7 @@ async def full_promote(client, message):
     await message.reply(f"✅ Successfully fully promoted {message.reply_to_message.from_user.mention}.")
 
 # Demote User (Remove Admin Privileges)
-@app.on_message(filters.command("demote") & filters.group)
+@app.on_message(filters.command("demote", PREFIX) & filters.group)
 async def demote(client, message):
     if not message.reply_to_message:
         return await message.reply("Reply to a user to demote them.")
@@ -54,7 +59,7 @@ async def demote(client, message):
 
 
 # Set Admin Title Or After Promote
-@app.on_message(filters.command("title") & filters.group)
+@app.on_message(filters.command("title", PREFIX) & filters.group)
 async def setadmin(client, message):
     if len(message.command) < 2:
         return await message.reply("Usage: /title <new admin title>")
