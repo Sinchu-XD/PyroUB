@@ -1,3 +1,4 @@
+import os
 from pyrogram import filters
 import textwrap
 from PIL import Image, ImageDraw, ImageFont
