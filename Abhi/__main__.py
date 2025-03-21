@@ -1,22 +1,8 @@
-import asyncio
-from Abhi import app
-import logging
-
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("Abhi")
-
-
-async def start_bot():
-    try:
-        await app.start()
-        me = await app.get_me()
-        logger.info(f"UserBot started successfully as {me.first_name} ({me.id})")
-        await asyncio.get_event_loop().run_forever()
-    except Exception as e:
-        logger.error(f"Error starting bot: {e}")
-        await app.stop()
+from Abhi import app, logger
 
 if __name__ == "__main__":
-    asyncio.run(start_bot())
-  
+    logger.info("🚀 Starting UserBot...")
+    try:
+        app.run()  # ✅ This automatically handles event loops
+    except Exception as e:
+        logger.error(f"❌ Error starting bot: {e}", exc_info=True)
