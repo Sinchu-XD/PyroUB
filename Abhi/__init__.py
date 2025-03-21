@@ -8,7 +8,7 @@ logger = logging.getLogger("Abhi")
 
 # Initialize Pyrofork Client
 app = Client(
-    SESSION_STRING,
+    session_string=SESSION_STRING,
     api_id=API_ID,
     api_hash=API_HASH,
     plugins=dict(root="Plugins"),  # Load plugins from the "plugins" directory
