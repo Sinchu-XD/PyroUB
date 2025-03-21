@@ -1,19 +1,5 @@
 import asyncio
-import logging
-from pyrogram import Client
-from .config import API_ID, API_HASH, SESSION_STRING
-
-# Enable logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("Abhi")
-
-# Initialize Pyrofork Client
-app = Client(
-    SESSION_STRING,
-    api_id=API_ID,
-    api_hash=API_HASH,
-    plugins=dict(root="Plugins"),  # Load plugins from the "plugins" directory
-)
+from Abhi import app
 
 async def start_bot():
     try:
