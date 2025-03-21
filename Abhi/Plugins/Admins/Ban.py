@@ -1,4 +1,5 @@
 from pyrogram import filters
+from pyrogram.types import Message  # ✅ Fix: Import Message
 from Abhi import app
 
 
