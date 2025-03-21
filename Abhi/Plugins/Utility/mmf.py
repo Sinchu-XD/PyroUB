@@ -49,4 +49,5 @@ def drawText(image_path, text):
     draw.text((text_x - 2, text_y - 2), text, font=font, fill=shadow_color)
     draw.text((text_x + 2, text_y - 2), text, font=font, fill=shadow_color)
     draw.text((text_x - 2, text_y + 2), text, font=font, fill=shadow_color)
-    draw.text((text_x + 2, text_y + 2), text,
+    draw.text((text_x + 2, text_y + 2), text, font=font, fill="black")  # ✅ Fixed
+
