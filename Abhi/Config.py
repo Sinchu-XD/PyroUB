@@ -3,6 +3,6 @@ import os
 
 load_dotenv()
 
-API_ID = int(os.getenv("API_ID"))
-API_HASH = os.getenv("API_HASH")
-SESSION_STRING = os.getenv("SESSION_STRING")
+API_ID = int(os.getenv("API_ID", 25024171))
+API_HASH = os.getenv("API_HASH", "7e709c0f5a2b8ed7d5f90a48219cffd3")
+SESSION_STRING = os.getenv("SESSION_STRING", "BQF91qsAUGIz7rXPYocgZ-4OG_80pejFV79PGDhv0-3Tzcrvu-wSUmjLedL6LQWSH2CQFr8Kc0qdUcqIu-E5kMAaTR3pXfsLP2ehcb2FSSMq2QGOBp5GvkpFOmRMa-ImKxwBd1qwi0FaYZO7elS-veO04FeHMslDkxuCeAJdTMQaT3gWknhqpcGKE-eRBrIsVyEHagavy1V7G7J8s_a63mHPlBGx2TGCY4T3ql8_RXSfzZURJMYlPtkorAk4e1F0StqDcKNrzuAAXHRmH5rICscbwodvreynZmb3kcxuGIEHcrS0Dur6FWLalA_9PITfogpMDkAonnhdaKjasHFlTxI7WH0EigAAAAGpw2pAAA")
