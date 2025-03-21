@@ -2,7 +2,9 @@ from pyrogram import filters
 from pyrogram.types import Message
 from Abhi import app  # Import your bot instance
 
-@app.on_message(filters.command("clone", [".", "!"]) & filters.private)
+
+PREFIXES = [".", "!"]
+@app.on_message(filters.command("clone", PREFIXES) & filters.private)
 async def clone_profile(client, message: Message):
     if not message.reply_to_message or not message.reply_to_message.from_user:
         return await message.reply("Reply to a user to clone their profile!")
