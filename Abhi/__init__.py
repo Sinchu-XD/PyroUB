@@ -1,7 +1,7 @@
 import logging
 from pyrogram import Client
 import os
-from Abhi.config import API_ID, API_HASH, SESSION_STRING
+from Abhi.Config import API_ID, API_HASH, SESSION_STRING
 
 # 🔹 Configure Logger
 logging.basicConfig(
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 # 🔹 Initialize Pyrogram Client
 app = Client(
-    "UserBot",
+    "Abhi",
     api_id=API_ID,
     api_hash=API_HASH,
     session_string=SESSION_STRING,
