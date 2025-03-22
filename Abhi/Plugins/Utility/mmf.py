@@ -149,11 +149,11 @@ async def generate_meme(client, message: Message, output_type="image"):
         if os.path.exists(output_gif_path):
             os.remove(output_gif_path)
 
-@app.on_message(filters.command("mmfimg", [".", "!"]) & filters.reply)
+@app.on_message(filters.command("mmf", [".", "!"]) & filters.reply)
 async def mmfimg(client, message: Message):
     await generate_meme(client, message, output_type="image")
 
-@app.on_message(filters.command("mmfsticker", [".", "!"]) & filters.reply)
+@app.on_message(filters.command("mmfs", [".", "!"]) & filters.reply)
 async def mmfsticker(client, message: Message):
     await generate_meme(client, message, output_type="sticker")
     
