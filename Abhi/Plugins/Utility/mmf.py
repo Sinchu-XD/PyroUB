@@ -1,6 +1,8 @@
 import os
 import random
 import cv2
+import json
+import lottie
 from PIL import Image, ImageDraw, ImageFont, ImageSequence
 from pyrogram import filters
 from pyrogram.types import Message
@@ -12,6 +14,17 @@ TEMP_PATH = "Abhi/Plugins/Temp/"
 
 # Ensure the temp directory exists
 os.makedirs(TEMP_PATH, exist_ok=True)
+
+async def convert_tgs_to_webp(tgs_path, output_path):
+    """ Converts `.tgs` (Lottie) files to `.webp` format """
+    try:
+        animation = lottie.parsers.tgs.parse_tgs(tgs_path)
+        frame = animation.render_frame(0)  # Extract first frame as static
+        frame.save(output_path, "WEBP")
+        return output_path
+    except Exception as e:
+        print(f"Error converting .tgs: {e}")
+        return None
 
 async def generate_meme(client, message: Message, output_type="image"):
     if not message.reply_to_message:
@@ -30,7 +43,6 @@ async def generate_meme(client, message: Message, output_type="image"):
     top_text = meme_text[0].strip() if len(meme_text) > 0 else ""
     bottom_text = meme_text[1].strip() if len(meme_text) > 1 else ""
 
-    # **Fix for 'NoneType' error**
     if not top_text and not bottom_text:
         return await message.reply("⚠️ **Text cannot be empty!**")
 
@@ -41,62 +53,59 @@ async def generate_meme(client, message: Message, output_type="image"):
     output_gif_path = os.path.join(TEMP_PATH, f"meme_{random.randint(1000, 9999)}.gif")
 
     try:
-        # If media is a GIF or video sticker, extract frames
+        # Handle `.tgs` (Animated Stickers)
+        if media.sticker and media.sticker.is_animated:
+            webp_path = media_path.replace(".tgs", ".webp")
+            converted_path = await convert_tgs_to_webp(media_path, webp_path)
+
+            if not converted_path:
+                return await message.reply("❌ **Failed to process animated sticker!**")
+
+            media_path = converted_path  # Replace path with converted file
+
+        # Handle GIFs and video stickers
         if media.animation or (media.sticker and media.sticker.is_video):
             cap = cv2.VideoCapture(media_path)
             frames = []
-            frame_count = 0
-
             while True:
                 ret, frame = cap.read()
                 if not ret:
                     break
-                frame_count += 1
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 img = Image.fromarray(frame)
                 frames.append(img)
 
             cap.release()
-
             if not frames:
                 return await message.reply("❌ **Failed to extract frames from GIF/Video Sticker!**")
 
-            # Process each frame
             processed_frames = []
             font_size = int(frames[0].height / 10)
-
             try:
                 font = ImageFont.truetype(FONT_PATH, size=font_size)
             except Exception:
                 return await message.reply("❌ **Impact font missing!** Upload `impact.ttf` to `Assets/` folder.")
 
             def draw_text(draw, text, position, img):
-                if not text or not isinstance(text, str):
+                if not text:
                     return
                 x, y = position
                 text_width, text_height = draw.textbbox((0, 0), text, font=font)[2:]
-
-                if text_width == 0 or text_height == 0:
-                    return
-
                 x = (img.width - text_width) // 2
                 for dx, dy in [(-2, -2), (2, -2), (-2, 2), (2, 2)]:
                     draw.text((x + dx, y + dy), text, font=font, fill="black")
                 draw.text((x, y), text, font=font, fill="white")
 
             for frame in frames:
-                frame = frame.convert("RGBA")
                 draw = ImageDraw.Draw(frame)
                 draw_text(draw, top_text, (0, 10), frame)
                 draw_text(draw, bottom_text, (0, frame.height - font_size - 10), frame)
                 processed_frames.append(frame)
 
-            # Save as GIF
             processed_frames[0].save(output_gif_path, save_all=True, append_images=processed_frames[1:], loop=0, duration=50)
             await message.reply_animation(output_gif_path, caption="😂 **Here's your meme!**")
 
         else:
-            # Open the image
             img = Image.open(media_path).convert("RGBA")
             draw = ImageDraw.Draw(img)
 
@@ -107,12 +116,10 @@ async def generate_meme(client, message: Message, output_type="image"):
                 return await message.reply("❌ **Impact font missing!** Upload `impact.ttf` to `Assets/` folder.")
 
             def draw_text(draw, text, position):
-                if not text or not isinstance(text, str):
+                if not text:
                     return
                 x, y = position
                 text_width, text_height = draw.textbbox((0, 0), text, font=font)[2:]
-                if text_width == 0 or text_height == 0:
-                    return
                 x = (img.width - text_width) // 2
                 for dx, dy in [(-2, -2), (2, -2), (-2, 2), (2, 2)]:
                     draw.text((x + dx, y + dy), text, font=font, fill="black")
@@ -121,7 +128,6 @@ async def generate_meme(client, message: Message, output_type="image"):
             draw_text(draw, top_text, (0, 10))
             draw_text(draw, bottom_text, (0, img.height - font_size - 10))
 
-            # Save image or sticker
             if output_type == "sticker":
                 img = img.convert("RGB")
                 img.save(output_sticker_path, "WEBP")
@@ -134,7 +140,6 @@ async def generate_meme(client, message: Message, output_type="image"):
         await message.reply(f"❌ **Error:** `{e}`")
 
     finally:
-        # Clean up temp files
         if os.path.exists(media_path):
             os.remove(media_path)
         if os.path.exists(output_image_path):
@@ -144,13 +149,11 @@ async def generate_meme(client, message: Message, output_type="image"):
         if os.path.exists(output_gif_path):
             os.remove(output_gif_path)
 
-# Command for Image Output
-@app.on_message(filters.command("mmf", [".", "!"]) & filters.reply)
+@app.on_message(filters.command("mmfimg", [".", "!"]) & filters.reply)
 async def mmfimg(client, message: Message):
     await generate_meme(client, message, output_type="image")
 
-# Command for Sticker Output (Now Supports GIFs!)
-@app.on_message(filters.command("mmfs", [".", "!"]) & filters.reply)
+@app.on_message(filters.command("mmfsticker", [".", "!"]) & filters.reply)
 async def mmfsticker(client, message: Message):
     await generate_meme(client, message, output_type="sticker")
     
