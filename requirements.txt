@@ -1,3 +1,5 @@
 pyrofork
 pillow
 python-dotenv
+opencv-python
+lottie
