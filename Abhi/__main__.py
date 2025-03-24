@@ -3,10 +3,12 @@ from Abhi import app, logger
 
 async def run_bot():
     try:
-        await app.disconnect()  # Ensures no active session conflict
+        if not app.is_connected:
+            await app.connect()
         await app.start()
     except Exception as e:
         print(f"Error: {e}")
+
 
 
 if __name__ == "__main__":
