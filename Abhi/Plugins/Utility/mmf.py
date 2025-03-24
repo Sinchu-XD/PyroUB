@@ -3,7 +3,7 @@ import random
 import cv2
 import lottie
 from PIL import Image, ImageDraw, ImageFont, ImageSequence
-from lottie.exporters import to_pillow
+from lottie.exporters import pillow as to_pillow
 from pyrogram import filters
 from pyrogram.types import Message
 from Abhi import app  # Your bot instance
