@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 # 🔹 Initialize Pyrogram Bot Client (Important Change)
 app = Client(
-    "Abhi",  # Change session name to indicate it's a bot
+    "AbhiBot",  # Change session name to indicate it's a bot
     api_id=API_ID,
     api_hash=API_HASH,
     bot_token=BOT_TOKEN,  # Use bot_token instead of session_string
